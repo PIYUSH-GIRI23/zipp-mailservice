@@ -6,24 +6,24 @@ import { initializeSubscriber } from './redis/redis_init.js';
 const app = express();
 const PORT = process.env.PORT || 4000;
 
+// 🩺 Health check route for Render
+app.get('/', (req, res) => res.send('Mail service active ✅'));
+app.get('/healthz', (req, res) => res.status(200).send('OK'));
+
 const startServer = async () => {
   try {
     const emailReady = await verifyMailConnection();
-    if (!emailReady) throw new Error('Email service failed to initialize');
+    if (!emailReady) console.warn('⚠️ Email service failed to initialize');
 
     const subscriberReady = await initializeSubscriber();
-    if (!subscriberReady) throw new Error('Redis subscriber failed to initialize');
+    if (!subscriberReady) console.warn('⚠️ Redis subscriber failed to initialize');
 
-    console.log('✅ Mail service is running and listening for events');
-
-    // 🩺 Health route for Render
-    app.get('/', (req, res) => res.send('Mail service active ✅'));
-
-    app.listen(PORT, () => console.log(`🌍 Listening on port ${PORT}`));
+    console.log('✅ Mail service initialized (with possible warnings)');
   } catch (error) {
-    console.error('❌ Server startup error:', error);
-    process.exit(1);
+    console.error('❌ Startup error:', error);
   }
 };
 
+// Always start server first so Render detects port
+app.listen(PORT, () => console.log(`🌍 Listening on port ${PORT}`));
 startServer();
